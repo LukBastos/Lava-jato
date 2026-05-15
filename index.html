@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LavaJato Sistema</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #4f8ef7;
+      --accent2: #7eb8ff;
+      --green: #3ecf8e;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #f0f2ff;
+      --text2: #8892aa;
+      --border: #2a2f45;
+      --radius: 12px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width:220px; background:var(--surface); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; padding:24px 0; position:fixed; height:100vh;
+    }
+    .logo { padding:0 20px 24px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .logo h1 { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; color:var(--accent); }
+    .logo span { font-size:0.7rem; color:var(--text2); letter-spacing:2px; text-transform:uppercase; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px; padding:11px 20px;
+      color:var(--text2); cursor:pointer; font-size:0.88rem; transition:all .15s;
+      border-left:3px solid transparent;
+    }
+    .nav-item:hover { color:var(--text); background:var(--surface2); }
+    .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(79,142,247,0.08); font-weight:500; }
+
+    /* MAIN */
+    .main { margin-left:220px; padding:32px 36px; flex:1; }
+    .page { display:none; }
+    .page.active { display:block; animation:fadeUp .25s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .page-title { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:700; margin-bottom:4px; }
+    .page-sub { color:var(--text2); font-size:0.85rem; margin-bottom:24px; }
+
+    /* CARD */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:20px; }
+    .card-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:600; margin-bottom:16px; color:var(--accent2); }
+
+    /* FORM */
+    .form-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .fg { display:flex; flex-direction:column; gap:5px; flex:1; min-width:160px; }
+    .fg.full { flex:100%; }
+    label { font-size:0.72rem; font-weight:500; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; }
+    input, select {
+      padding:9px 12px; background:var(--surface2); border:1px solid var(--border);
+      border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.88rem; outline:none;
+      transition:border-color .15s;
+    }
+    input:focus, select:focus { border-color:var(--accent); }
+    input::placeholder { color:var(--text2); }
+
+    .btn {
+      padding:9px 20px; border:none; border-radius:8px; font-family:'Syne',sans-serif;
+      font-size:0.82rem; font-weight:600; cursor:pointer; transition:all .15s; letter-spacing:.3px;
+    }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:var(--accent2); }
+    .btn-danger { background:rgba(248,113,113,0.12); color:var(--red); border:1px solid rgba(248,113,113,0.2); padding:5px 12px; font-size:0.78rem; }
+    .btn-danger:hover { background:var(--red); color:#fff; }
+
+    /* TABLE */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    thead th { padding:10px 14px; text-align:left; color:var(--text2); font-size:0.72rem; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid var(--border); font-weight:500; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+    tbody tr:hover { background:var(--surface2); }
+    td { padding:11px 14px; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:500; }
+    .badge-blue { background:rgba(79,142,247,0.15); color:var(--accent2); }
+    .badge-green { background:rgba(62,207,142,0.15); color:var(--green); }
+    .badge-yellow { background:rgba(251,191,36,0.15); color:var(--yellow); }
+
+    .empty { text-align:center; padding:36px; color:var(--text2); font-size:0.85rem; }
+
+    /* TOAST */
+    #toast {
+      position:fixed; bottom:24px; right:24px; background:var(--green); color:#0f1117;
+      padding:12px 20px; border-radius:10px; font-size:0.85rem; font-weight:600;
+      transform:translateY(60px); opacity:0; transition:all .3s; z-index:999;
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.err { background:var(--red); color:#fff; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <h1>🚿 LavaJato</h1>
+    <span>Sistema</span>
+  </div>
+  <div class="nav-item active" onclick="go('clientes',this)">👤 Clientes</div>
+  <div class="nav-item" onclick="go('veiculos',this)">🚗 Veículos</div>
+  <div class="nav-item" onclick="go('agendamentos',this)">📅 Agendamentos</div>
+  <div class="nav-item" onclick="go('pagamentos',this)">💳 Pagamentos</div>
+</aside>
+
+<main class="main">
+
+  <!-- CLIENTES -->
+  <div id="pg-clientes" class="page active">
+    <div class="page-title">Clientes</div>
+    <div class="page-sub">Cadastro de clientes do lava jato</div>
+    <div class="card">
+      <div class="card-title">Novo Cliente</div>
+      <div class="form-row">
+        <div class="fg"><label>Nome*</label><input id="c-nome" placeholder="João Silva"/></div>
+        <div class="fg"><label>Telefone*</label><input id="c-tel" placeholder="(11) 99999-9999"/></div>
+      </div>
+      <button class="btn btn-primary" onclick="addCliente()">Cadastrar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Lista de Clientes</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Telefone</th><th></th></tr></thead>
+          <tbody id="tb-clientes"><tr><td colspan="3"><div class="empty">Nenhum cliente ainda</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VEÍCULOS -->
+  <div id="pg-veiculos" class="page">
+    <div class="page-title">Veículos</div>
+    <div class="page-sub">Vincule veículos aos clientes</div>
+    <div class="card">
+      <div class="card-title">Novo Veículo</div>
+      <div class="form-row">
+        <div class="fg"><label>Placa*</label><input id="v-placa" placeholder="ABC1D23"/></div>
+        <div class="fg"><label>Modelo*</label><input id="v-modelo" placeholder="Civic, HB20..."/></div>
+        <div class="fg"><label>Cliente*</label><select id="v-cliente"><option value="">Selecione...</option></select></div>
+      </div>
+      <button class="btn btn-primary" onclick="addVeiculo()">Cadastrar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Lista de Veículos</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Placa</th><th>Modelo</th><th>Cliente</th><th></th></tr></thead>
+          <tbody id="tb-veiculos"><tr><td colspan="4"><div class="empty">Nenhum veículo ainda</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENDAMENTOS -->
+  <div id="pg-agendamentos" class="page">
+    <div class="page-title">Agendamentos</div>
+    <div class="page-sub">Agende lavagens para os veículos</div>
+    <div class="card">
+      <div class="card-title">Novo Agendamento</div>
+      <div class="form-row">
+        <div class="fg"><label>Veículo*</label><select id="a-veiculo"><option value="">Selecione...</option></select></div>
+        <div class="fg"><label>Serviço*</label>
+          <select id="a-servico">
+            <option value="">Selecione...</option>
+            <option>Lavagem Simples</option>
+            <option>Lavagem Completa</option>
+            <option>Polimento</option>
+            <option>Higienização</option>
+          </select>
+        </div>
+        <div class="fg"><label>Data e Hora*</label><input id="a-data" type="datetime-local"/></div>
+      </div>
+      <button class="btn btn-primary" onclick="addAgendamento()">Agendar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Lista de Agendamentos</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Placa</th><th>Serviço</th><th>Data</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tb-agendamentos"><tr><td colspan="6"><div class="empty">Nenhum agendamento ainda</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGAMENTOS -->
+  <div id="pg-pagamentos" class="page">
+    <div class="page-title">Pagamentos</div>
+    <div class="page-sub">Registre os pagamentos das lavagens</div>
+    <div class="card">
+      <div class="card-title">Novo Pagamento</div>
+      <div class="form-row">
+        <div class="fg"><label>Agendamento*</label><select id="p-ag"><option value="">Selecione...</option></select></div>
+        <div class="fg"><label>Valor (R$)*</label><input id="p-val" type="number" step="0.01" placeholder="50.00"/></div>
+        <div class="fg"><label>Forma*</label>
+          <select id="p-forma">
+            <option value="">Selecione...</option>
+            <option>Dinheiro</option><option>PIX</option>
+            <option>Cartão de Crédito</option><option>Cartão de Débito</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addPagamento()">Registrar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de Pagamentos</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Placa</th><th>Serviço</th><th>Valor</th><th>Forma</th><th></th></tr></thead>
+          <tbody id="tb-pagamentos"><tr><td colspan="6"><div class="empty">Nenhum pagamento ainda</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000';
+
+function go(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pg-' + page).classList.add('active');
+  el.classList.add('active');
+  if (page === 'clientes') loadClientes();
+  if (page === 'veiculos') { loadVeiculos(); fillSelect('v-cliente', '/clientes', c => ({v:c.id, l:c.nome})); }
+  if (page === 'agendamentos') { loadAgendamentos(); fillSelect('a-veiculo', '/veiculos', v => ({v:v.id, l:`${v.placa} — ${v.modelo}`})); }
+  if (page === 'pagamentos') { loadPagamentos(); fillSelect('p-ag', '/agendamentos', a => ({v:a.id, l:`${a.placa} — ${a.servico}`})); }
+}
+
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = err ? 'err show' : 'show';
+  setTimeout(() => t.className = '', 2800);
+}
+
+async function api(path, method='GET', body=null) {
+  const r = await fetch(API+path, { method, headers:{'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : null });
+  return r.json();
+}
+
+async function fillSelect(id, path, mapper) {
+  const data = await api(path);
+  const sel = document.getElementById(id);
+  sel.innerHTML = '<option value="">Selecione...</option>' + data.map(d => `<option value="${mapper(d).v}">${mapper(d).l}</option>`).join('');
+}
+
+function del(path, fn) {
+  if (!confirm('Remover este registro?')) return;
+  api(path, 'DELETE').then(() => { toast('Removido!'); fn(); });
+}
+
+// CLIENTES
+async function addCliente() {
+  const nome = document.getElementById('c-nome').value.trim();
+  const telefone = document.getElementById('c-tel').value.trim();
+  if (!nome || !telefone) { toast('Preencha todos os campos!', true); return; }
+  const r = await api('/clientes', 'POST', { nome, telefone });
+  if (r.erro) { toast(r.erro, true); return; }
+  toast('Cliente cadastrado! ✅');
+  document.getElementById('c-nome').value = '';
+  document.getElementById('c-tel').value = '';
+  loadClientes();
+}
+
+async function loadClientes() {
+  const data = await api('/clientes');
+  const tb = document.getElementById('tb-clientes');
+  tb.innerHTML = data.length ? data.map(c => `
+    <tr>
+      <td>${c.nome}</td>
+      <td>${c.telefone}</td>
+      <td><button class="btn btn-danger" onclick="del('/clientes/${c.id}', loadClientes)">🗑 Remover</button></td>
+    </tr>`).join('') : '<tr><td colspan="3"><div class="empty">Nenhum cliente ainda</div></td></tr>';
+}
+
+// VEÍCULOS
+async function addVeiculo() {
+  const placa = document.getElementById('v-placa').value.trim();
+  const modelo = document.getElementById('v-modelo').value.trim();
+  const cliente_id = document.getElementById('v-cliente').value;
+  if (!placa || !modelo || !cliente_id) { toast('Preencha todos os campos!', true); return; }
+  const r = await api('/veiculos', 'POST', { placa, modelo, cliente_id: +cliente_id });
+  if (r.erro) { toast(r.erro, true); return; }
+  toast('Veículo cadastrado! ✅');
+  document.getElementById('v-placa').value = '';
+  document.getElementById('v-modelo').value = '';
+  loadVeiculos();
+}
+
+async function loadVeiculos() {
+  const data = await api('/veiculos');
+  const tb = document.getElementById('tb-veiculos');
+  tb.innerHTML = data.length ? data.map(v => `
+    <tr>
+      <td><span class="badge badge-blue">${v.placa}</span></td>
+      <td>${v.modelo}</td>
+      <td>${v.cliente_nome}</td>
+      <td><button class="btn btn-danger" onclick="del('/veiculos/${v.id}', loadVeiculos)">🗑 Remover</button></td>
+    </tr>`).join('') : '<tr><td colspan="4"><div class="empty">Nenhum veículo ainda</div></td></tr>';
+}
+
+// AGENDAMENTOS
+async function addAgendamento() {
+  const veiculo_id = document.getElementById('a-veiculo').value;
+  const servico = document.getElementById('a-servico').value;
+  const data_hora = document.getElementById('a-data').value;
+  if (!veiculo_id || !servico || !data_hora) { toast('Preencha todos os campos!', true); return; }
+  const r = await api('/agendamentos', 'POST', { veiculo_id: +veiculo_id, servico, data_hora });
+  if (r.erro) { toast(r.erro, true); return; }
+  toast('Agendamento criado! 📅');
+  document.getElementById('a-veiculo').value = '';
+  document.getElementById('a-servico').value = '';
+  document.getElementById('a-data').value = '';
+  loadAgendamentos();
+}
+
+async function loadAgendamentos() {
+  const data = await api('/agendamentos');
+  const tb = document.getElementById('tb-agendamentos');
+  tb.innerHTML = data.length ? data.map(a => `
+    <tr>
+      <td>${a.cliente_nome}</td>
+      <td><span class="badge badge-blue">${a.placa}</span></td>
+      <td>${a.servico}</td>
+      <td>${new Date(a.data_hora).toLocaleString('pt-BR')}</td>
+      <td><span class="badge badge-yellow">${a.status}</span></td>
+      <td><button class="btn btn-danger" onclick="del('/agendamentos/${a.id}', loadAgendamentos)">🗑</button></td>
+    </tr>`).join('') : '<tr><td colspan="6"><div class="empty">Nenhum agendamento ainda</div></td></tr>';
+}
+
+// PAGAMENTOS
+async function addPagamento() {
+  const agendamento_id = document.getElementById('p-ag').value;
+  const valor = document.getElementById('p-val').value;
+  const forma = document.getElementById('p-forma').value;
+  if (!agendamento_id || !valor || !forma) { toast('Preencha todos os campos!', true); return; }
+  const r = await api('/pagamentos', 'POST', { agendamento_id: +agendamento_id, valor: +valor, forma });
+  if (r.erro) { toast(r.erro, true); return; }
+  toast('Pagamento registrado! 💳');
+  document.getElementById('p-ag').value = '';
+  document.getElementById('p-val').value = '';
+  document.getElementById('p-forma').value = '';
+  loadPagamentos();
+}
+
+async function loadPagamentos() {
+  const data = await api('/pagamentos');
+  const tb = document.getElementById('tb-pagamentos');
+  tb.innerHTML = data.length ? data.map(p => `
+    <tr>
+      <td>${p.cliente_nome}</td>
+      <td><span class="badge badge-blue">${p.placa}</span></td>
+      <td>${p.servico}</td>
+      <td><strong>R$ ${Number(p.valor).toFixed(2)}</strong></td>
+      <td><span class="badge badge-green">${p.forma}</span></td>
+      <td><button class="btn btn-danger" onclick="del('/pagamentos/${p.id}', loadPagamentos)">🗑</button></td>
+    </tr>`).join('') : '<tr><td colspan="6"><div class="empty">Nenhum pagamento ainda</div></td></tr>';
+}
+
+// init
+loadClientes();
+</script>
+</body>
+</html>
